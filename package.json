@@ -1,0 +1,32 @@
+{
+  "name": "multi-agent-a2a-orchestration",
+  "version": "0.3.0",
+  "description": "Haunted Studio: an auditable multi-agent experiment in persistent artistic trajectory.",
+  "type": "module",
+  "private": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/cli.js run",
+    "cycle": "node src/cli.js run",
+    "status": "node src/cli.js status",
+    "verify": "node src/cli.js verify",
+    "serve": "node src/cli.js serve",
+    "reset": "node src/cli.js reset",
+    "test": "node --test",
+    "report": "node src/cli.js report",
+    "doctor": "node src/cli.js doctor",
+    "demo": "node scripts/demo.js",
+    "experiment": "node src/cli.js experiment"
+  },
+  "keywords": [
+    "multi-agent",
+    "creative-ai",
+    "agent-memory",
+    "a2a",
+    "artificial-creativity",
+    "provenance"
+  ],
+  "license": "MIT"
+}

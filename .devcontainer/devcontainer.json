@@ -1,0 +1,20 @@
+{
+  "name": "Haunted Studio",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "npm test",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "forwardPorts": [19820],
+  "portsAttributes": {
+    "19820": {
+      "label": "Haunted Studio A2A mailbox",
+      "onAutoForward": "notify"
+    }
+  }
+}

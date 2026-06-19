@@ -1,163 +1,316 @@
-# Multi-Agent A2A Orchestration
+# Haunted Studio
 
-> A 2-agent system: a research agent that feeds live AI trends into a self-evolving capability engine via A2A HTTP mailbox protocol.
+> An auditable multi-agent experiment asking whether an artificial creative system can develop an artistic trajectory, not merely generate isolated attractive objects.
 
-**Built by:** [Fevlet](https://www.linkedin.com/in/christeen-amburgey/)
-**Upstream Engine:** [EvoMap Evolver](https://github.com/EvoMap/evolver) (self-evolving capability engine)
-**Status:** ✅ Working demo verified
+This repository began as a two-agent A2A orchestration concept. Haunted Studio turns that foundation toward a harder question:
 
----
+> Can a system become answerable to what it has already made?
 
-## What This Is
+## Current status: v0.3.0
 
-A **true multi-agent system** with two distinct agents communicating via a real A2A (Agent-to-Agent) protocol over HTTP:
+The repository now contains a runnable Node.js system, not only a design document.
 
-1. **AI Research Agent** — Fetches live AI trends from Hacker News API, formats them as opportunity signals, and delivers them to the evolver's inbound mailbox.
-2. **Capability Evolver** — Receives those signals, selects mutation genes based on the real-world data, and evolves new capabilities.
+It includes:
 
-Both agents share a **memory graph** for persistence and a **mailbox queue** for real-time signaling.
+- self-directed attention over an observation stream;
+- creative necessity and pre-generation intention locking;
+- multiple distinct candidate concepts;
+- independent formal, truth, historical, adversarial, and surprise criticism;
+- one disciplined revision opportunity;
+- meaningful refusal when nothing deserves acceptance;
+- optional image generation and post-generation visual audit;
+- audience prediction followed by recorded human responses;
+- motif, unresolved-tension, and surprise memory;
+- append-only hash-linked history;
+- state forks for path-dependence experiments;
+- six-condition ablation testing;
+- trajectory reports;
+- a local A2A observation mailbox;
+- an offline deterministic provider and an optional OpenAI provider;
+- a test suite with no required third-party packages.
 
----
+## Honest boundary
 
-## Architecture
+This project does not establish that a model is conscious, feels need, receives a muse, suffers, or possesses personhood. Model-generated first-person language is not evidence of an inner life.
 
-```
-┌─────────────────────┐      POST /mailbox/receive      ┌─────────────────────┐
-│   Research Agent    │  ─────────────────────────────▶ │   Evolver Proxy     │
-│   (Node 2)          │  A2A HTTP: opportunity_signal   │   (Node 1)          │
-│                     │                                 │   port 19820        │
-└─────────────────────┘                                 └─────────────────────┘
-          │                                                       │
-          │                                                       │ GET /mailbox/poll
-          │                                                       ▼
-          │                                             Inbound Queue (memory)
-          │                                                       │
-          │                                                       │ skillUpdater.pollAndApply()
-          │                                                       ▼
-          └───────────────────────┬───────────────────────────────┘
-                                  │
-                  Memory Graph (shared JSONL persistence)
-```
+The experiment tests six observable properties associated with artistic practice:
 
-**Protocol:** Custom A2A-style HTTP mailbox delivery
+1. selective attention;
+2. path dependence;
+3. normative resistance;
+4. transformative surprise;
+5. relational intention;
+6. answerability to a body of work.
 
-- **Delivery:** `POST /mailbox/receive` → writes to inbound queue
-- **Consumption:** `POST /mailbox/poll` → reads pending messages
-- **Acknowledgment:** `POST /mailbox/ack` → marks delivered
+## Quick start
 
----
-
-## What I Built
-
-### 1. Research Agent (`research-agent.js`)
-- Fetches real AI trends from Hacker News API (no API key needed)
-- Tracks 10 topics: agentic orchestration, MCP, A2A, multi-agent systems, context engineering, enterprise AI, agent mesh, LLM routing, AI feedback, self-evolving AI
-- Formats findings as structured `opportunity_signal` messages with confidence scores
-- Sends via HTTP to the evolver's inbound mailbox
-- Also writes to shared memory graph for guaranteed persistence
-
-### 2. Mailbox Route Extension (`routes-patch.js`)
-Added `POST /mailbox/receive` to the evolver's proxy server:
-
-```javascript
-'POST /mailbox/receive': async ({ body }) => {
-  const messageId = store.writeInbound({
-    type: body.type,
-    payload: body.payload,
-    priority: body.priority || 'normal',
-  });
-  return { body: { message_id: messageId, status: 'received' } };
-}
-```
-
-This enables any external agent to deliver messages to the evolver's inbound queue over HTTP, completing the A2A protocol loop.
-
-### 3. End-to-End Demo (`run-demo.js`)
-- Verifies evolver proxy is reachable
-- Triggers research agent cycle
-- Polls evolver inbound queue
-- Acknowledges messages
-- Verifies memory graph state
-
-**Verified demo output:**
-
-```
-[Step 1] ✓ Evolver proxy: running (node: node_60aeb8993cf1)
-[Step 2] Research Agent: Researching: multi-agent systems
-[Step 2] A2A HTTP: 019e97d0-... → evolver inbound (received)
-[Step 3] Evolver polled: 2 messages received
-[Step 3] Type: opportunity_signal | Topic: multi-agent systems | Findings: 3
-[Step 4] Acknowledged: 2
-[Step 5] Memory Graph: 4 research events from ai-research-agent
-```
-
----
-
-## How to Run
-
-### Prerequisites
-- Node.js >= 18
-- The evolver proxy running (see [EvoMap/evolver](https://github.com/EvoMap/evolver))
-
-### Quick Start
+Requires Node.js 20 or newer.
 
 ```bash
-# Install dependencies
-npm install
-
-# Run the research agent (one-shot)
-node research-agent.js
-
-# Run the full demo
-node run-demo.js
+npm test
+npm run demo
 ```
 
-### Manual Test
+The demo runs five offline creative cycles and writes a trajectory report.
+
+For a persistent studio:
 
 ```bash
-# Check evolver status
-curl http://127.0.0.1:19820/proxy/status
+npm run cycle
+npm run status
+npm run verify
+npm run report
+```
 
-# Send a research signal to evolver inbound
+Run diagnostics:
+
+```bash
+npm run doctor
+```
+
+## Persistent studio
+
+The default runtime state appears in `.haunted-studio/` and is excluded from Git:
+
+```text
+.haunted-studio/
+├── ledger.jsonl
+├── state.json
+├── mailbox.jsonl
+├── reviews/
+├── reports/
+└── works/
+    └── cycle_.../
+        ├── 01-observation.json
+        ├── 02-locked-intention.json
+        ├── 03-candidates.json
+        ├── 04-critiques.json
+        ├── 05-curation.json
+        ├── 06-artifact-audit.json
+        ├── 06b-audience-prediction.json
+        ├── 07-memory-consolidation.json
+        └── manifest.json
+```
+
+Some files appear only when their stage occurs. A rejected cycle has no artifact or audience prediction. A revised cycle includes additional revision files.
+
+## The creative cycle
+
+```text
+OBSERVE
+  ↓
+SELECT WHAT MATTERS
+  ↓
+FORM NECESSITY
+  ↓
+LOCK AND HASH INTENTION
+  ↓
+GENERATE DISTINCT CANDIDATES
+  ↓
+INDEPENDENT CRITIC PANEL
+  ↓
+ACCEPT, REVISE ONCE, OR REFUSE ALL
+  ↓
+OPTIONALLY GENERATE THE ARTIFACT
+  ↓
+AUDIT THE IMAGE THAT ACTUALLY EXISTS
+  ↓
+PREDICT THE VIEWER ENCOUNTER
+  ↓
+RECORD HUMAN RESPONSES
+  ↓
+CONSOLIDATE MEMORY WITHOUT REWRITING HISTORY
+  ↓
+MAKE THE NEXT CYCLE ANSWER TO THIS ONE
+```
+
+A concept accepted before image generation receives `conceptual_only` status. A generated image enters `verified_artifact` status only after its visual audit meets the configured threshold. A failed image does not inherit the concept's acceptance automatically.
+
+## Use a live model and image generator
+
+A ChatGPT subscription does not include API usage. API billing and access are separate.
+
+Set environment variables outside the repository:
+
+```bash
+export HAUNTED_STUDIO_PROVIDER=openai
+export OPENAI_API_KEY=your_key_here
+export OPENAI_TEXT_MODEL=gpt-5.5
+export OPENAI_IMAGE_MODEL=gpt-image-2
+node src/cli.js run --image
+```
+
+Model names are configurable because model availability changes.
+
+Official documentation:
+
+- https://developers.openai.com/api/docs/guides/structured-outputs
+- https://developers.openai.com/api/docs/guides/image-generation
+
+## Run the ablation experiment
+
+The experiment runner executes six otherwise related conditions:
+
+- full Haunted Studio;
+- no autobiographical memory;
+- assigned rather than self-directed attention;
+- forced acceptance with refusal removed;
+- no audience prediction;
+- no surprise carryover.
+
+Run five cycles per condition:
+
+```bash
+npm run experiment -- 5 experiments/run-001
+```
+
+Outputs:
+
+```text
+experiments/run-001/
+├── comparison.json
+├── comparison.md
+├── full/
+├── no_memory/
+├── assigned_attention/
+├── forced_acceptance/
+├── no_audience_model/
+└── no_surprise_carryover/
+```
+
+A deterministic run validates the machinery. It does not validate the artistic hypothesis. That requires live model behavior, enough cycles, and blinded human review.
+
+## Record a human review
+
+Copy and edit `docs/human-review.example.json`, then run:
+
+```bash
+node src/cli.js review <cycle-id> my-review.json
+npm run report
+```
+
+The system records what the viewer actually noticed and compares it with the prior audience prediction. Approval alone is not treated as useful evidence.
+
+## Fork the artistic history
+
+Create a branch of the studio state at a particular point:
+
+```bash
+node src/cli.js fork .haunted-studio-branch-a "branch exposed to institutional observations"
+```
+
+Run the branch by pointing `HAUNTED_STUDIO_HOME` to it:
+
+```bash
+HAUNTED_STUDIO_HOME=.haunted-studio-branch-a npm run cycle
+```
+
+This supports the central path-dependence test: start with the same history, expose branches to different experiences, and determine whether their practices meaningfully diverge.
+
+## Correct memory without rewriting it
+
+A mistaken interpretation is corrected by adding a new event, not editing the old event.
+
+```bash
+node src/cli.js correct-memory docs/my-correction.json
+```
+
+See `docs/memory-correction.example.json`.
+
+If the current state projection is lost or falls behind the ledger:
+
+```bash
+node src/cli.js rebuild-state
+npm run verify
+```
+
+The ledger is authoritative. `state.json` is a rebuildable working projection.
+
+## A2A observation mailbox
+
+The mailbox binds to `127.0.0.1` by default and is not production hardened.
+
+```bash
+npm run serve
+```
+
+Send an observation:
+
+```bash
 curl -X POST http://127.0.0.1:19820/mailbox/receive \
   -H "Content-Type: application/json" \
-  -d '{"type": "opportunity_signal", "payload": {"topic": "MCP protocol", "confidence": 0.9}}'
-
-# Poll evolver inbound queue
-curl -X POST http://127.0.0.1:19820/mailbox/poll \
-  -H "Content-Type: application/json" \
-  -d '{"type": "opportunity_signal", "limit": 5}'
+  -d '{
+    "type": "observation_signal",
+    "sender": "field-observer",
+    "priority": "high",
+    "payload": {
+      "text": "A waiting-room clock has twelve minute hands and no hour hand.",
+      "tags": ["waiting", "institution", "time"],
+      "rights": "project-authored"
+    }
+  }'
 ```
 
----
+Let the next cycle consider pending mailbox observations:
 
-## Limitations & Honesty
+```bash
+node src/cli.js run --mailbox
+```
 
-- **Single-node deployment** — Both agents run on the same machine. The A2A protocol works but isn't distributed.
-- **Local store** — The mailbox uses a local JSONL file, not a message queue like RabbitMQ or Kafka.
-- **Not enterprise scale** — This is a proof-of-concept. The architecture is sound but would need queuing, retries, and auth for production.
-- **Upstream dependency** — The evolver engine is from EvoMap. My contribution is the research agent and the A2A integration.
+Delivery does not guarantee selection. The attention agent still decides whether the observation matters.
 
----
+## Why the ledger matters
 
-## Related Work
+Each event records:
 
-- **Upstream Engine:** [EvoMap/evolver](https://github.com/EvoMap/evolver) — the self-evolving capability engine that receives my research signals
-- **Evolver's GEP Protocol:** evomap.ai/wiki — Genome Evolution Protocol for auditable AI evolution
-- **MCP Protocol:** modelcontextprotocol.io — Model Context Protocol for AI tool integration
-- **A2A Protocol:** google.github.io/A2A — Google's Agent-to-Agent protocol (inspiration, not implementation)
+- sequence number;
+- timestamp;
+- actor;
+- cycle ID;
+- previous event hash;
+- current event hash.
 
----
+Editing an earlier event breaks verification. This prevents the system from quietly replacing a failed history with a flattering autobiography.
+
+```bash
+npm run verify
+```
+
+## iPhone and Codespaces
+
+The repository includes a GitHub Codespaces configuration. No local Node.js installation is required when using Codespaces from a mobile browser.
+
+See `docs/MOBILE-SETUP.md`.
+
+## Project map
+
+```text
+config/          constitution, thresholds, budgets
+docs/            research protocol, architecture, mobile setup
+observations/    seed observation stream
+scripts/         reproducible demo
+src/a2a/         local mailbox
+src/agents/      attention, artist, critics, curator, memory
+src/core/        ledger, state, hashing, scoring, validation
+src/engine/      cycle, reviews, reports, forks, diagnostics
+src/experiment/  conditions and ablation runner
+src/providers/   deterministic and OpenAI adapters
+test/            offline test suite
+```
+
+## Next research milestones
+
+- artifact editing after a failed visual audit;
+- blinded review assignment and reviewer randomization;
+- automatic audience-prediction calibration scores;
+- motif-graph visualization rather than count-only memory;
+- stronger distinction between productive fixation and brand repetition;
+- 30-cycle live-model runs under each condition;
+- preregistered human evaluation criteria;
+- a publishable methods and findings report.
+
+See `docs/RESEARCH-HYPOTHESES.md` and `docs/EXPERIMENT-PROTOCOL.md`.
 
 ## License
 
-My additions (research agent, demo, routes patch) are MIT licensed. The upstream evolver engine has its own license — see [EvoMap/evolver](https://github.com/EvoMap/evolver).
-
----
-
-## Contact
-
-**Fevlet** — building AI that builds AI.
-LinkedIn: [linkedin.com/in/christeen-amburgey](https://www.linkedin.com/in/christeen-amburgey)
-
-> "I build systems that build themselves."
+MIT
