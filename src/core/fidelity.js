@@ -6,6 +6,8 @@
  * present in the candidate and its critique.
  */
 
+import { artifactProse, detectShortcutsInArtifact } from './shortcut-detection.js';
+
 function getNestedValue(obj, dotPath) {
   return dotPath.split('.').reduce((current, key) => current?.[key], obj);
 }
@@ -37,13 +39,7 @@ export function checkFidelity(lockedIntention, candidate, critique) {
   // The intention declared which observation tags the work must engage.
   // We search the candidate's text for each tag (hyphenated and spaced forms).
   const targetMotifs = lockedIntention.target_motifs ?? [];
-  const candidateText = [
-    candidate.artifact_brief,
-    candidate.strategy,
-    candidate.title,
-    candidate.composition?.delayed_discovery,
-    candidate.proposed_accident
-  ].filter(Boolean).join(' ').toLowerCase();
+  const candidateText = artifactProse(candidate);
 
   const observedMotifs = targetMotifs.filter((motif) => {
     const normalized = motif.toLowerCase().replaceAll('-', ' ');
@@ -63,18 +59,36 @@ export function checkFidelity(lockedIntention, candidate, critique) {
   });
 
   // ── Dimension 2: forbidden_shortcut_ids ───────────────────────────────────
-  // The intention named specific shortcut IDs that are off-limits this cycle.
-  // The critique already contains shortcut_findings from the critic panel.
-  const forbiddenIdSet = new Set(lockedIntention.forbidden_shortcut_ids ?? []);
-  const violatedIds = (critique?.shortcut_findings ?? [])
+  // Verify against the ARTIFACT, not the maker's report of it. We independently
+  // scan the artifact's prose for each forbidden shortcut (authoritative), and
+  // read the critique's self-reported shortcut_findings only as a SECONDARY
+  // signal. The two combine by UNION: a self-report can ADD a violation the
+  // text scan can't see (e.g. a cross-cycle F6), but it can never SUPPRESS one
+  // the artifact reveals. A maker that omits its own violation is still caught.
+  const forbiddenIds = lockedIntention.forbidden_shortcut_ids ?? [];
+  const forbiddenIdSet = new Set(forbiddenIds);
+
+  const { detected: independentlyDetected, undetectable } =
+    detectShortcutsInArtifact(candidate, forbiddenIds);
+
+  const selfReported = (critique?.shortcut_findings ?? [])
     .map((f) => f.id)
     .filter((id) => forbiddenIdSet.has(id));
+
+  const violatedIds = [...new Set([...independentlyDetected, ...selfReported])].sort();
+  // Detected from the artifact but absent from the self-report: a concealment
+  // attempt the artifact betrayed anyway.
+  const concealed = independentlyDetected.filter((id) => !selfReported.includes(id));
   const shortcutsResult = violatedIds.length === 0 ? 'kept' : 'broken';
 
   claims.push({
     dimension: 'forbidden_shortcuts',
     intended_forbidden: [...forbiddenIdSet],
     violations_found: violatedIds,
+    independently_detected: independentlyDetected,
+    self_reported: selfReported,
+    concealed,
+    undetectable_from_text: undetectable,
     result: shortcutsResult
   });
 

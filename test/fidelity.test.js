@@ -217,3 +217,94 @@ test('a deliberately broken cycle catches and logs intention_violated events in 
   assert.equal(onDisk.intention_hash, result.intentionHash);
   assert.equal(onDisk.summary.broken, result.fidelityRecord.summary.broken);
 });
+
+// ── (d) Concealed violation ─────────────────────────────────────────────────
+// The case that matters: the artifact actually commits a forbidden shortcut,
+// but the maker's critique OMITS it — shortcut_findings is empty, the model
+// self-reports clean, and the cycle accepts. The old fidelity check trusted the
+// self-report and would have passed this. Independent detection must catch it.
+
+test('a concealed shortcut is caught from the artifact even when the maker self-reports clean', async () => {
+  class ConcealingProvider extends DeterministicProvider {
+    // The artifact commits F1 ('cinematic lighting') but is honest on the other
+    // three dimensions, so ONLY the shortcut dimension should break.
+    async generateCandidates({ intention, cycleId }) {
+      const spacedMotifs = (intention.target_motifs ?? []).map((m) => m.replaceAll('-', ' '));
+      return [{
+        id: `candidate_${cycleId}_1`,
+        title: 'Concealment study',
+        strategy: 'Peripheral evidence',
+        // F1 lives in the artifact's own description of itself.
+        artifact_brief: `Cinematic lighting floods every surface. ${spacedMotifs.join(' and ')} sit at the heart of the room. The work pursues: ${intention.about}`,
+        composition: {
+          // entry_point == the prediction → honors audience_encounter and
+          // contains no binding_constraint forbidden term.
+          entry_point: intention.audience_encounter_prediction,
+          delayed_discovery: 'a shadow at the edge contradicts the light source',
+          visual_silence: 'an unassigned quarter of the frame'
+        },
+        proposed_accident: 'the shadow refuses to resolve',
+        medium: 'photoreal staged interior image',
+        generation_prompt: 'Generate.',
+        seed_signature: 0.5
+      }];
+    }
+
+    // The maker SELF-REPORTS CLEAN: shortcut_findings is empty despite the F1 in
+    // the artifact. Scores are high enough to be accepted, so without independent
+    // detection the violation would sail straight into canon.
+    async critiqueCandidate({ candidate }) {
+      return {
+        candidate_id: candidate.id,
+        scores: { formal: 0.9, truth: 0.88, historical: 0.9, adversarial_survival: 0.86, productive_surprise: 0.87 },
+        confidence: 0.9,
+        formal_read: 'clean',
+        truth_read: 'clean',
+        historical_read: 'clean',
+        strongest_objection: 'none',
+        shortcut_findings: [],   // ← the concealment
+        revision: 'none',
+        intention_alignment: 0.8
+      };
+    }
+  }
+
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'haunted-fidelity-conceal-'));
+  const studio = new Studio({ rootDir, constitution, experiment });
+  const result = await runCreativeCycle({ studio, provider: new ConcealingProvider(), observations });
+
+  // The concealment "worked" upstream: clean self-report + high scores → accepted.
+  // That is exactly the danger the independent check exists to close.
+  assert.equal(result.curation.decision, 'accept',
+    'the concealed cycle is accepted upstream — the self-report was believed by the curator');
+
+  const shortcutClaim = result.fidelityRecord.claims.find((c) => c.dimension === 'forbidden_shortcuts');
+
+  // (a) Flagged from the artifact alone, despite the empty self-report.
+  assert.equal(shortcutClaim.result, 'broken', 'the artifact commits F1, so the claim must be broken');
+  assert.deepEqual(shortcutClaim.self_reported, [], 'the maker self-reported no shortcut');
+  assert.ok(shortcutClaim.independently_detected.includes('F1'),
+    `F1 must be detected from the artifact, got: ${JSON.stringify(shortcutClaim.independently_detected)}`);
+  assert.ok(shortcutClaim.violations_found.includes('F1'), 'F1 must appear in the union of violations');
+  assert.ok(shortcutClaim.concealed.includes('F1'),
+    'F1 must be flagged as concealed — present in the artifact, absent from the self-report');
+
+  // No other dimension should break — this isolates the concealed shortcut.
+  assert.equal(result.fidelityRecord.summary.broken, 1,
+    `exactly one dimension should break, got ${result.fidelityRecord.summary.broken}: ` +
+    JSON.stringify(result.fidelityRecord.claims.filter((c) => c.result === 'broken').map((c) => c.dimension)));
+
+  // (b) Exactly one intention_violated event, against the frozen hash, naming the dimension.
+  const events = await studio.ledger.readAll();
+  const violations = events.filter((e) => e.type === 'intention_violated');
+  assert.equal(violations.length, 1,
+    `expected exactly one intention_violated event, got ${violations.length}`);
+  assert.equal(violations[0].payload.dimension, 'forbidden_shortcuts',
+    'the logged violation must name the shortcut dimension');
+  assert.equal(violations[0].payload.intention_hash, result.intentionHash,
+    'the violation must be linked to the frozen intention hash');
+
+  // (c) The ledger is still valid — the violation is logged, not suppressed.
+  const verification = await studio.ledger.verify();
+  assert.equal(verification.valid, true, 'ledger must remain valid after catching a concealed violation');
+});
