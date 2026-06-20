@@ -205,8 +205,12 @@ async function main() {
   }
 
   if (parsed.command === 'reset') {
-    await studio.reset();
-    console.log(`Deleted studio state at ${config.studioRoot}`);
+    const archiveRoot = await studio.archive();
+    if (archiveRoot) {
+      console.log(`Archived studio state at ${archiveRoot}`);
+    } else {
+      console.log(`No studio state exists at ${config.studioRoot}`);
+    }
     return;
   }
 

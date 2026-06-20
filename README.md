@@ -2,13 +2,26 @@
 
 > An auditable multi-agent experiment asking whether an artificial creative system can develop an artistic trajectory, not merely generate isolated attractive objects.
 
-This repository began as a two-agent A2A orchestration concept. Haunted Studio turns that foundation toward a harder question:
+This codebase is Haunted Studio. The GitHub repository began under the name
+`multi-agent-a2a-orchestration` as a proposed two-agent A2A demonstration, but
+the runnable implementation now in the repository is a separate research
+system. A2A messaging remains as one input mechanism rather than the project's
+identity or primary architecture.
+
+The original proposal is preserved in
+[`docs/archive/MULTI-AGENT-A2A-ORCHESTRATION.md`](docs/archive/MULTI-AGENT-A2A-ORCHESTRATION.md),
+with its evidentiary limits stated explicitly. See [`docs/A2A-ORIGIN.md`](docs/A2A-ORIGIN.md)
+for commit-level provenance.
+
+Haunted Studio asks a harder question:
 
 > Can a system become answerable to what it has already made?
 
 ## Current status: v0.3.0
 
-The repository now contains a runnable Node.js system, not only a design document.
+The repository contains a runnable Node.js research prototype. Version 0.3.0
+identifies the first complete Haunted Studio tree committed here; it is not a
+claim that the research hypothesis has been demonstrated.
 
 It includes:
 
@@ -180,6 +193,10 @@ experiments/run-001/
 
 A deterministic run validates the machinery. It does not validate the artistic hypothesis. That requires live model behavior, enough cycles, and blinded human review.
 
+Experiment output is generated runtime data and is ignored by Git. Preserve a
+run outside the working tree or publish a deliberately curated, consent-checked
+research artifact rather than committing the raw runtime directory.
+
 ## Record a human review
 
 Copy and edit `docs/human-review.example.json`, then run:
@@ -225,6 +242,11 @@ npm run verify
 ```
 
 The ledger is authoritative. `state.json` is a rebuildable working projection.
+
+`npm run reset` does not silently delete an existing ledger. It moves the
+current studio directory to a timestamped sibling archive before a new studio is
+created on the next run. Disposable test and experiment directories continue to
+be cleared internally by their runners.
 
 ## A2A observation mailbox
 
@@ -286,7 +308,7 @@ See `docs/MOBILE-SETUP.md`.
 
 ```text
 config/          constitution, thresholds, budgets
-docs/            research protocol, architecture, mobile setup
+docs/            research protocol, architecture, history, mobile setup
 observations/    seed observation stream
 scripts/         reproducible demo
 src/a2a/         local mailbox

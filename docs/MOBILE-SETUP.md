@@ -2,19 +2,12 @@
 
 The easiest mobile route is GitHub Codespaces. It gives the repository a real Linux computer in the browser, so no local installation is required on the phone.
 
-## Put the files in the repository
-
-1. Download the project ZIP from the ChatGPT conversation.
-2. In the GitHub repository, open **Add file** and choose **Upload files**.
-3. GitHub's mobile upload interface may not unpack a ZIP. When that happens, use Codespaces and upload the ZIP into the file explorer, then run `unzip` in the terminal.
-4. Commit the files to a new branch named `haunted-studio-v0` rather than overwriting `main` immediately.
-
 ## Open a Codespace
 
 1. Open the repository.
 2. Tap **Code**.
 3. Open the **Codespaces** tab.
-4. Tap **Create codespace on haunted-studio-v0**.
+4. Select the branch you intend to work on and tap **Create codespace**.
 5. Wait for the browser editor and terminal to load.
 
 The repository includes `.devcontainer/devcontainer.json`, so Codespaces installs Node.js 22 and runs the tests automatically.
@@ -61,16 +54,14 @@ export HAUNTED_STUDIO_PROVIDER=openai
 node src/cli.js run --image
 ```
 
-## Save the generated studio history
+## Preserve generated studio history safely
 
-The `.haunted-studio/` folder is ignored by Git because it may contain generated images and private observations. To preserve an experimental run, copy the report into a tracked results directory:
+The `.haunted-studio/` and `experiments/` directories are ignored because they
+may contain generated images, external observations, reviewer material, and
+other runtime data. Do not commit those directories directly.
 
-```bash
-mkdir -p results/run-001
-cp .haunted-studio/reports/* results/run-001/
-git add results/run-001
-git commit -m "Add run 001 trajectory report"
-git push
-```
-
-Do not commit API keys, private journal material, or images you do not have the right to use.
+To retain a run, download an archive to controlled storage or copy it to an
+approved research-data location. Before publishing any derived report, review
+it for consent, rights, private observations, local paths, and accidental
+credentials. Commit only an intentionally curated artifact under a separately
+documented data policy.

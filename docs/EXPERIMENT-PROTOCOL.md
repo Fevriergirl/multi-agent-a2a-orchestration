@@ -1,17 +1,32 @@
 # Experiment protocol
 
-## Four conditions
+## Six implemented conditions
 
-Run the same observation stream and comparable generation budget through four conditions:
+The experiment runner uses the same observation stream and comparable cycle
+budget across six feature-ablation conditions defined in
+`src/experiment/conditions.js`:
 
-1. **Generator**: no memory and no revision.
-2. **Studio assistant**: memory plus revision.
-3. **Creative agent**: memory, critics, and self-generated goals.
-4. **Haunted Studio**: full system with intention locking, refusal, audience prediction, permanent history, and functional stakes.
+1. **Full Haunted Studio (`full`)**: all implemented features enabled.
+2. **No autobiographical memory (`no_memory`)**: autobiographical retrieval and
+   surprise carryover disabled.
+3. **Assigned attention (`assigned_attention`)**: self-directed attention
+   disabled.
+4. **No refusal (`forced_acceptance`)**: refusal and revision disabled so a
+   candidate is forced through the selection path.
+5. **No audience prediction (`no_audience_model`)**: the audience model disabled.
+6. **No surprise carryover (`no_surprise_carryover`)**: detected surprise is not
+   carried into later cycles.
+
+Earlier drafts described four conceptual system classes—generator, studio
+assistant, creative agent, and full Haunted Studio. Those labels were never the
+conditions implemented by the current runner and are retained only in Git
+history. Experimental reports must use the six names above.
 
 ## Minimum run
 
-Thirty creative cycles per condition. Do not judge the project from a single image.
+Thirty creative cycles per condition for a substantive study. Short
+deterministic runs are smoke tests for the machinery only. Do not judge the
+research hypothesis from a single image or a deterministic run.
 
 ## Evaluation
 

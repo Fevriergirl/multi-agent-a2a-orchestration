@@ -1,7 +1,8 @@
 import path from 'node:path';
-import { rm } from 'node:fs/promises';
+import { access, rename, rm } from 'node:fs/promises';
 import { AppendOnlyLedger } from './ledger.js';
 import { ensureDir, readJson, writeJsonAtomic } from './fs.js';
+import { id } from './ids.js';
 
 export const DEFAULT_STATE = {
   version: 1,
@@ -131,5 +132,19 @@ export class Studio {
 
   async reset() {
     await rm(this.rootDir, { recursive: true, force: true });
+  }
+
+  async archive() {
+    try {
+      await access(this.rootDir);
+    } catch (error) {
+      if (error.code === 'ENOENT') return null;
+      throw error;
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const archiveRoot = `${this.rootDir}.archive-${timestamp}-${id('snapshot')}`;
+    await rename(this.rootDir, archiveRoot);
+    return archiveRoot;
   }
 }

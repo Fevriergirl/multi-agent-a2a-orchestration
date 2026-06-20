@@ -1,11 +1,38 @@
-# A2A origin of the repository
+# A2A origin and repository provenance
 
-The public repository originally described a two-agent proof of concept:
+The repository has one continuous Git history but two project identities.
 
-1. a research agent gathered current AI-trend signals;
-2. an evolver accepted those signals through an HTTP mailbox;
-3. both used JSONL persistence.
+## Original proposal
 
-At the start of the Haunted Studio build, the public repository contained the README description but not the JavaScript files named in it. Version 0.3 therefore implements a new, runnable A2A mailbox and persistence layer rather than pretending the described implementation was present.
+Commits `ec2a793`, `5ed8d23`, and `0d24ed4` contained only `README.md`. That
+README described a two-agent proof of concept in which a research agent sent AI
+trend signals to an EvoMap Evolver mailbox backed by JSONL persistence. The
+named implementation files were never committed, so the original working-demo
+claim cannot be reproduced from this repository.
 
-The inherited idea remains important. External observer agents can send `observation_signal` messages to the studio, but the artistic system decides whether the material deserves attention. Delivery is not the same as significance.
+The full proposal is preserved at
+[`archive/MULTI-AGENT-A2A-ORCHESTRATION.md`](archive/MULTI-AGENT-A2A-ORCHESTRATION.md).
+
+## Haunted Studio import
+
+Commit `3a25b8` added `haunted-studio-v0.3.0.zip`. Its SHA-256 is:
+
+```text
+d1603c730cbccc16049f0545d6d13c03b1f1b3f3ac21f5cbbc9e19e49975b69e
+```
+
+Commit `bee2640` extracted the complete 59-file archive into the repository and
+removed the duplicate ZIP from the working tree. A byte-aware audit confirmed
+that every archived file matches the extracted tracked file after line-ending
+normalization. The ZIP remains recoverable from Git history, so no work was
+lost when the duplicate binary was removed.
+
+## Relationship between the projects
+
+Haunted Studio does not implement the proposed research-agent/Evolver system.
+It implements its own local observation mailbox and append-only ledger. External
+agents may deliver `observation_signal` messages, but delivery is only an input:
+the attention agent still decides whether an observation matters.
+
+The current project should therefore be named Haunted Studio. The historical
+A2A proposal remains documentation, not a second partially working codebase.
