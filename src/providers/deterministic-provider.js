@@ -80,7 +80,17 @@ export class DeterministicProvider {
       anticipated_risk: state.cycle_count === 0
         ? 'The first cycle may mistake atmosphere for a point of view.'
         : 'The studio may repeat an earlier motif because it has already learned how to make it attractive.',
-      revision_question: 'What can be removed while making the contradiction harder to escape?'
+      revision_question: 'What can be removed while making the contradiction harder to escape?',
+
+      // Checkable commitment fields — frozen in the hash before any candidate is generated.
+      target_motifs: observation.tags.slice(0, 2),
+      forbidden_shortcut_ids: ['F1', 'F2', 'F3'],
+      binding_constraint: {
+        claim: 'The impossible element must not appear at the compositional entry point',
+        test_field: 'composition.entry_point',
+        forbidden_terms: ['center', 'centered', 'immediately visible', 'obvious', 'announces']
+      },
+      audience_encounter_prediction: `an ordinary ${primary.replaceAll('-', ' ')} near the lower third`
     };
   }
 

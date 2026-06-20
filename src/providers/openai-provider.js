@@ -67,7 +67,23 @@ export class OpenAIProvider {
   }
 
   lockIntention(context) {
-    return this.requestJson({ role: 'artist agent', task: 'Commit the intention before generation. Return about, viewer_encounter, formal_tension, must_include, must_avoid, anticipated_risk, revision_question.', context, requiredKeys: ['about', 'viewer_encounter', 'formal_tension', 'must_include', 'must_avoid', 'anticipated_risk', 'revision_question'] });
+    return this.requestJson({
+      role: 'artist agent',
+      task: [
+        'Commit the intention before generation. Every field is frozen and hashed; you cannot revise it after candidates are seen.',
+        'Return: about, viewer_encounter, formal_tension, must_include (array), must_avoid (array), anticipated_risk, revision_question.',
+        'Also return these checkable commitment fields:',
+        '  target_motifs: array of 1–3 observation tag strings the work must explicitly engage.',
+        '  forbidden_shortcut_ids: array of constitution shortcut IDs (e.g. ["F1","F2","F3"]) that are off-limits this cycle.',
+        '  binding_constraint: object with three keys:',
+        '    claim (string): one falsifiable structural statement about the work,',
+        '    test_field (string): dotted path into the candidate to evaluate, e.g. "composition.entry_point",',
+        '    forbidden_terms (array of strings): terms in that field that would falsify the claim.',
+        '  audience_encounter_prediction: a short string predicting the compositional first-encounter (mirrors composition.entry_point).'
+      ].join(' '),
+      context,
+      requiredKeys: ['about', 'viewer_encounter', 'formal_tension', 'must_include', 'must_avoid', 'anticipated_risk', 'revision_question', 'target_motifs', 'forbidden_shortcut_ids', 'binding_constraint', 'audience_encounter_prediction']
+    });
   }
 
   generateCandidates(context) {

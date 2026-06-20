@@ -342,12 +342,11 @@ test('intention hash changes when intention content changes', async () => {
     'different observations should produce different intention hashes');
 });
 
-// ─── OPENAI CURATION THRESHOLD BYPASS (CONTRACT TEST) ────────────────────────
+// ─── OPENAI CURATION THRESHOLD BYPASS — NOW CLOSED ──────────────────────────
 
-test('curator-agent does NOT re-validate that OpenAI score meets canon_threshold — known bypass', async () => {
-  // The curator-agent.js only checks decision enum and candidate existence.
-  // If OpenAI returns decision:'accept' with score:0.01, it is accepted.
-  // This test uses a fake provider to prove the bypass.
+test('curator-agent throws when any provider reports accept with score below canon_threshold', async () => {
+  // Stage 4 of the intention-fidelity build closed this bypass.
+  // curator-agent.js now enforces the threshold regardless of provider.
   const { curate } = await import('../src/agents/curator-agent.js');
   const candidates = [{ id: 'cand_A', title: 'A', strategy: 's', artifact_brief: 'b', generation_prompt: 'g' }];
   const critiques = [{ candidate_id: 'cand_A', scores: {}, confidence: 0.9, strongest_objection: 'none', revision: 'none', shortcut_findings: [] }];
@@ -355,24 +354,21 @@ test('curator-agent does NOT re-validate that OpenAI score meets canon_threshold
     curate: async () => ({
       decision: 'accept',
       selected_candidate_id: 'cand_A',
-      score: 0.01,         // way below canon_threshold of 0.7
+      score: 0.01,  // below canon_threshold of 0.7
       threshold: 0.7,
       rationale: 'LLM decided to accept regardless',
       conditions: [],
       ranking: []
     })
   };
-  const result = await curate({
-    provider: fakeProvider,
-    candidates,
-    critiques,
-    intention: { about: 'test' },
-    state: {},
-    constitution,
-    experiment: baseExperiment,
-    allowRevision: false
-  });
-  // This passes — demonstrating that the threshold is not re-validated
-  assert.equal(result.decision, 'accept', 'curator-agent accepts LLM decision without threshold re-check');
-  assert.equal(result.score, 0.01, 'sub-threshold score is accepted when OpenAI provider is used');
+  await assert.rejects(
+    () => curate({ provider: fakeProvider, candidates, critiques, intention: { about: 'test' }, state: {}, constitution, experiment: baseExperiment, allowRevision: false }),
+    (error) => {
+      assert.match(error.message, /below canon threshold/);
+      assert.ok(error.message.includes('0.01'), 'error should name the offending score');
+      assert.ok(error.message.includes('0.7'), 'error should name the threshold');
+      return true;
+    },
+    'curator-agent must throw when score is below canon_threshold regardless of provider'
+  );
 });

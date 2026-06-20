@@ -8,6 +8,7 @@ import { runCriticPanel } from '../agents/critic-panel.js';
 import { curate } from '../agents/curator-agent.js';
 import { consolidate } from '../agents/memory-agent.js';
 import { resolveFeatures } from '../experiment/conditions.js';
+import { checkFidelity } from '../core/fidelity.js';
 
 function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
@@ -204,6 +205,62 @@ export async function runCreativeCycle({
       ? workingCritiques.find((critique) => critique.candidate_id === selected.id)
       : null;
 
+    // ── Fidelity check ────────────────────────────────────────────────────────
+    // Run against the accepted candidate, or the top-ranked candidate when the
+    // cycle was rejected. The check uses already-computed data (candidate +
+    // critique) — no new provider call.
+    const fidelityCandidate = selected
+      ?? workingCandidates.find((c) => c.id === curation.ranking?.[0]?.candidate_id)
+      ?? workingCandidates[0];
+    const fidelityCritique = fidelityCandidate
+      ? workingCritiques.find((c) => c.candidate_id === fidelityCandidate.id)
+      : null;
+
+    const fidelityRecord = fidelityCandidate
+      ? checkFidelity(intention, fidelityCandidate, fidelityCritique)
+      : null;
+
+    if (fidelityRecord) {
+      fidelityRecord.intention_hash = intentionHash;
+      await studio.writeCycleFile(cycleId, 'fidelity.json', fidelityRecord);
+      await studio.ledger.append({
+        type: 'intention_fidelity_checked',
+        actor: 'fidelity-auditor',
+        cycleId,
+        payload: fidelityRecord
+      });
+
+      for (const claim of fidelityRecord.claims.filter((c) => c.result === 'broken')) {
+        await studio.ledger.append({
+          type: 'intention_violated',
+          actor: 'fidelity-auditor',
+          cycleId,
+          payload: {
+            intention_hash: intentionHash,
+            dimension: claim.dimension,
+            detail: claim
+          }
+        });
+      }
+
+      if (curation.decision === 'reject_all') {
+        await studio.ledger.append({
+          type: 'refusal_fidelity_checked',
+          actor: 'fidelity-auditor',
+          cycleId,
+          payload: {
+            intention_hash: intentionHash,
+            rationale: curation.rationale,
+            fidelity_broken_dimensions: fidelityRecord.claims
+              .filter((c) => c.result === 'broken')
+              .map((c) => c.dimension),
+            fidelity_summary: fidelityRecord.summary
+          }
+        });
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     let audiencePrediction = null;
     let artifactPath = null;
     let artifactAudit = null;
@@ -312,6 +369,7 @@ export async function runCreativeCycle({
       intention_hash: intentionHash,
       selected_candidate: selected,
       curation,
+      fidelity: fidelityRecord,
       audience_prediction: audiencePrediction,
       artifact_path: artifactPath,
       artifact_audit: artifactAudit,
@@ -326,7 +384,7 @@ export async function runCreativeCycle({
     const verification = await studio.ledger.verify();
     if (!verification.valid) throw new Error(`Ledger failed after cycle: ${verification.error}`);
 
-    return { cycleId, attention, necessity, intention, intentionHash, candidates: workingCandidates, critiques: workingCritiques, curation, selected, artifactPath, artifactAudit, canonStatus, audiencePrediction, memory, state: nextState, verification };
+    return { cycleId, attention, necessity, intention, intentionHash, candidates: workingCandidates, critiques: workingCritiques, curation, selected, fidelityRecord, artifactPath, artifactAudit, canonStatus, audiencePrediction, memory, state: nextState, verification };
   } catch (error) {
     await studio.ledger.append({
       type: 'cycle_failed',

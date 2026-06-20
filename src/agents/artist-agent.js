@@ -12,6 +12,16 @@ export async function formAndLockIntention({ provider, observation, state, const
   }
   requireArray(intention.must_include, 'intention.must_include');
   requireArray(intention.must_avoid, 'intention.must_avoid');
+
+  // Checkable commitment fields — must be present and machine-testable before generation.
+  requireArray(intention.target_motifs, 'intention.target_motifs');
+  requireArray(intention.forbidden_shortcut_ids, 'intention.forbidden_shortcut_ids');
+  requireObject(intention.binding_constraint, 'intention.binding_constraint');
+  requireString(intention.binding_constraint.claim, 'intention.binding_constraint.claim');
+  requireString(intention.binding_constraint.test_field, 'intention.binding_constraint.test_field');
+  requireArray(intention.binding_constraint.forbidden_terms, 'intention.binding_constraint.forbidden_terms');
+  requireString(intention.audience_encounter_prediction, 'intention.audience_encounter_prediction');
+
   return { necessity, intention };
 }
 
