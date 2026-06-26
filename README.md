@@ -53,6 +53,32 @@ npm run demo
 
 The demo runs five offline creative cycles and writes a trajectory report.
 
+## Make art offline (no API key)
+
+The studio renders its own images with a built-in, dependency-free renderer —
+no external API, no key, no network. One command:
+
+```bash
+npm run art        # one cycle that renders and audits a real image
+```
+
+This runs a full creative cycle and, for the accepted concept, writes a real
+`artifact.png` next to the cycle's other files
+(`.haunted-studio/works/cycle_.../artifact.png`), then audits the image it
+actually produced. A passing audit promotes the work to `verified_artifact`.
+
+The renderer is a deterministic, generative interpretation in the studio's
+visual language — an ordinary tonal field, one understated impossibility (a
+quietly bowing horizon), a pale form, and an area of visual silence. It is not
+a photoreal render; for that, wire a live image model (see
+[Live provider setup](#live-provider-setup)). The same `--image` flag works
+under any provider:
+
+```bash
+node src/cli.js run --image                              # deterministic, offline
+HAUNTED_STUDIO_PROVIDER=anthropic ANTHROPIC_API_KEY=... node src/cli.js run --image  # Claude reasons, renderer draws
+```
+
 ## A2A proof of life (start here)
 
 New to the project? Run one command to watch a complete agent-to-agent flow,

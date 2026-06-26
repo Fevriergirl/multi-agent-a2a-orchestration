@@ -38,11 +38,13 @@ test('Anthropic provider surfaces a refusal stop reason', async (context) => {
   await assert.rejects(() => provider.formNecessity({}), /refusal/);
 });
 
-test('createProvider selects the Anthropic provider and has no image generation', () => {
+test('createProvider selects the Anthropic provider, which renders art offline', () => {
   const provider = createProvider({ HAUNTED_STUDIO_PROVIDER: 'anthropic', ANTHROPIC_API_KEY: 'test' });
   assert.equal(provider.name, 'anthropic');
-  // No generateArtifact: the cycle cleanly skips image generation for this provider.
-  assert.equal(typeof provider.generateArtifact, 'undefined');
+  // Claude has no image API, so the provider renders via the offline renderer:
+  // Claude reasons, the local renderer makes the picture.
+  assert.equal(typeof provider.generateArtifact, 'function');
+  assert.equal(typeof provider.inspectArtifact, 'function');
 });
 
 test('createProvider requires an Anthropic key', () => {

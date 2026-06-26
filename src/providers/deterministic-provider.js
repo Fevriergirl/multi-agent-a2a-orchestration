@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { clamp, roundScore, weightedScore } from '../core/scoring.js';
+import { writeArtifact, auditArtifact } from '../render/artifact.js';
 
 function stableNumber(value) {
   const hex = createHash('sha256').update(value).digest('hex').slice(0, 8);
@@ -250,17 +251,14 @@ export class DeterministicProvider {
     };
   }
 
-  async inspectArtifact({ candidate }) {
-    return {
-      status: 'not_generated',
-      candidate_id: candidate.id,
-      overall_score: null,
-      recommended_action: 'generate_before_visual_judgment',
-      scores: null,
-      observations: ['The offline provider can evaluate the concept and history, but it cannot pretend it saw an image that was never generated.'],
-      failures: [],
-      strongest_accident: null
-    };
+  // Offline image generation: a real, deterministic PNG rendered from the
+  // candidate's prompt with no external API. See src/render/artifact.js.
+  async generateArtifact({ prompt, outputPath }) {
+    return writeArtifact({ prompt, outputPath });
+  }
+
+  async inspectArtifact({ imagePath, candidate }) {
+    return auditArtifact({ imagePath, candidate });
   }
 
   async consolidateMemory({ observation, selection, critiques, curation, state }) {
