@@ -22,7 +22,7 @@ export async function runDoctor({ cwd, studio, providerName, environment = proce
     { name: 'Artistic constitution', ok: await exists(path.join(cwd, 'config', 'constitution.json')) },
     { name: 'Experiment config', ok: await exists(path.join(cwd, 'config', 'experiment.json')) },
     { name: 'Observation stream', ok: await exists(path.join(cwd, 'observations', 'seed-observations.json')) },
-    { name: 'Provider configured', ok: providerName === 'deterministic' || Boolean(environment.OPENAI_API_KEY), detail: providerName },
+    { name: 'Provider configured', ok: providerName === 'deterministic' || (providerName === 'openai' && Boolean(environment.OPENAI_API_KEY)) || (providerName === 'anthropic' && Boolean(environment.ANTHROPIC_API_KEY)), detail: providerName },
     { name: 'Ledger integrity', ok: ledgerResult.valid, detail: ledgerResult.valid ? `${ledgerResult.count} events` : ledgerResult.error },
     { name: 'State projection matches ledger', ok: projectionMatches, detail: `state=${state.cycle_count}, ledger=${completedCycles}` }
   ];

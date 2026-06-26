@@ -165,12 +165,41 @@ By default the studio runs fully offline with the **deterministic** provider, so
 no key is needed for `npm test`, `npm run demo`, or `npm run proof:a2a`. The
 deterministic provider validates the machinery; it does not use a real model.
 
-To run against a real model, set these environment variables **outside the
-repository** (never commit a key):
+Two live providers are available: **`anthropic`** (Claude, text only) and
+**`openai`** (text plus image generation). Set the variables **outside the
+repository** (never commit a key).
+
+### Option A — Anthropic / Claude (text)
+
+Claude drives every reasoning agent (attention, necessity, artist, critics,
+curator, audience, memory). Claude has no image-generation API, so the image
+and visual-audit stages are skipped and accepted work stays at
+`conceptual_only` status — concepts and briefs, no rendered image.
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `HAUNTED_STUDIO_PROVIDER` | yes (`openai`) | `deterministic` | Selects the live provider |
+| `HAUNTED_STUDIO_PROVIDER` | yes (`anthropic`) | `deterministic` | Selects the Claude provider |
+| `ANTHROPIC_API_KEY` | yes | _none_ | The run fails immediately without it |
+| `ANTHROPIC_MODEL` | recommended | `claude-sonnet-4-6` | Any current Claude model id |
+| `ANTHROPIC_BASE_URL` | no | `https://api.anthropic.com/v1` | For compatible endpoints |
+| `ANTHROPIC_MAX_TOKENS` | no | `4096` | Per-response output cap |
+
+```bash
+export HAUNTED_STUDIO_PROVIDER=anthropic
+export ANTHROPIC_API_KEY=sk-ant-...your-key...
+# Optional: pick a more capable model (e.g. a current Opus model)
+export ANTHROPIC_MODEL=claude-sonnet-4-6
+node src/cli.js run
+```
+
+The default model is a Sonnet-class model for balanced cost and capability;
+set `ANTHROPIC_MODEL` to a current Opus model id for maximum capability.
+
+### Option B — OpenAI (text + image)
+
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `HAUNTED_STUDIO_PROVIDER` | yes (`openai`) | `deterministic` | Selects the OpenAI provider |
 | `OPENAI_API_KEY` | yes | _none_ | The run fails immediately without it |
 | `OPENAI_TEXT_MODEL` | recommended | `gpt-5.5` | Reasoning + visual audit model |
 | `OPENAI_IMAGE_MODEL` | recommended | `gpt-image-2` | Image generation model |
@@ -198,8 +227,26 @@ export $(grep -v '^#' .env | xargs)
 
 ### Smallest harmless live test (one text call, no image)
 
-Image generation is the expensive part, so the safest first probe is a single
-text request:
+The safest first probe is a single text request. The same probe works for
+either provider — `createProvider()` reads your environment.
+
+Claude:
+
+```bash
+HAUNTED_STUDIO_PROVIDER=anthropic \
+ANTHROPIC_API_KEY=sk-ant-...your-key... \
+node --input-type=module -e '
+import { createProvider } from "./src/providers/index.js";
+const p = createProvider();
+const r = await p.selectObservation({
+  observations: [{ id: "obs-1", text: "A door painted to look like open sky.", tags: ["threshold"] }],
+  state: { cycle_count: 0, motifs: {} },
+  constitution: {}
+});
+console.log(JSON.stringify(r, null, 2));'
+```
+
+OpenAI (image generation is the expensive part, so this stays text-only too):
 
 ```bash
 HAUNTED_STUDIO_PROVIDER=openai \
@@ -223,7 +270,7 @@ works. Next, run a full text-only cycle (still no image cost):
 node src/cli.js run        # ~8 text calls, no image
 ```
 
-Only add `--image` once the text path is confirmed:
+For OpenAI only, add `--image` once the text path is confirmed:
 
 ```bash
 node src/cli.js run --image   # also calls the image model + visual audit
@@ -231,11 +278,14 @@ node src/cli.js run --image   # also calls the image model + visual audit
 
 ### Status of the live path
 
-The OpenAI adapter is fully implemented — text reasoning (`/responses`), image
-generation (`/images/generations`), and a multimodal visual audit. It has only
-ever been exercised against **mocked** HTTP in the test suite; no live API call
-has been made from this repository. Treat the first live run as unverified and
-start with the single-call probe above.
+Both adapters are fully implemented. The Anthropic adapter drives every
+reasoning agent through the Claude Messages API (`/messages`); it has no image
+generation, so image runs are skipped cleanly. The OpenAI adapter adds text
+reasoning (`/responses`), image generation (`/images/generations`), and a
+multimodal visual audit. Both have only ever been exercised against **mocked**
+HTTP in the test suite; no live API call has been made from this repository.
+Treat the first live run as unverified and start with the single-call probe
+above.
 
 ## Use a live model and image generator
 
@@ -405,7 +455,7 @@ src/agents/      attention, artist, critics, curator, memory
 src/core/        ledger, state, hashing, scoring, validation
 src/engine/      cycle, reviews, reports, forks, diagnostics
 src/experiment/  conditions and ablation runner
-src/providers/   deterministic and OpenAI adapters
+src/providers/   deterministic, Anthropic, and OpenAI adapters
 test/            offline test suite
 ```
 
