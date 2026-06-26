@@ -53,6 +53,39 @@ npm run demo
 
 The demo runs five offline creative cycles and writes a trajectory report.
 
+## A2A proof of life (start here)
+
+New to the project? Run one command to watch a complete agent-to-agent flow,
+end to end, with no API key and no setup beyond Node.js:
+
+```bash
+npm run proof:a2a
+```
+
+This does the whole thing for you, in order, and prints each stage:
+
+1. starts the local A2A mailbox server;
+2. posts one external observer message into the mailbox over HTTP;
+3. polls and consumes that message;
+4. feeds the consumed observation into the real orchestration cycle;
+5. shows which internal agent roles were invoked (attention, artist, critic
+   panel, curator, audience, memory);
+6. saves a readable result to `outputs/a2a-proof-of-life.md`;
+7. saves the raw hash-linked event trace to `outputs/a2a-proof-of-life.jsonl`.
+
+Open `outputs/a2a-proof-of-life.md` afterward. The observer message text you
+sent is the same text the cycle builds its artifact from — that is the proof
+the external message reached the internal agents.
+
+To confirm it with a test:
+
+```bash
+npm test
+```
+
+The `A2A proof` test posts a message, runs the cycle, and asserts the message
+was consumed and appears in the saved artifact.
+
 For a persistent studio:
 
 ```bash
