@@ -159,6 +159,84 @@ MAKE THE NEXT CYCLE ANSWER TO THIS ONE
 
 A concept accepted before image generation receives `conceptual_only` status. A generated image enters `verified_artifact` status only after its visual audit meets the configured threshold. A failed image does not inherit the concept's acceptance automatically.
 
+## Live provider setup
+
+By default the studio runs fully offline with the **deterministic** provider, so
+no key is needed for `npm test`, `npm run demo`, or `npm run proof:a2a`. The
+deterministic provider validates the machinery; it does not use a real model.
+
+To run against a real model, set these environment variables **outside the
+repository** (never commit a key):
+
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `HAUNTED_STUDIO_PROVIDER` | yes (`openai`) | `deterministic` | Selects the live provider |
+| `OPENAI_API_KEY` | yes | _none_ | The run fails immediately without it |
+| `OPENAI_TEXT_MODEL` | recommended | `gpt-5.5` | Reasoning + visual audit model |
+| `OPENAI_IMAGE_MODEL` | recommended | `gpt-image-2` | Image generation model |
+| `OPENAI_BASE_URL` | no | `https://api.openai.com/v1` | For compatible endpoints |
+
+> The default model names are placeholders. Override `OPENAI_TEXT_MODEL` and
+> `OPENAI_IMAGE_MODEL` with model IDs that actually exist on your account, or a
+> live run may fail with a model-not-found error. A ChatGPT subscription does
+> not include API access; API billing is separate.
+
+### Set the key
+
+```bash
+export OPENAI_API_KEY=sk-...your-key...
+export HAUNTED_STUDIO_PROVIDER=openai
+export OPENAI_TEXT_MODEL=<a-currently-valid-text-model>
+export OPENAI_IMAGE_MODEL=<a-currently-valid-image-model>
+```
+
+A local `.env` file is git-ignored. If you keep your key there, load it first:
+
+```bash
+export $(grep -v '^#' .env | xargs)
+```
+
+### Smallest harmless live test (one text call, no image)
+
+Image generation is the expensive part, so the safest first probe is a single
+text request:
+
+```bash
+HAUNTED_STUDIO_PROVIDER=openai \
+OPENAI_API_KEY=sk-...your-key... \
+OPENAI_TEXT_MODEL=<a-currently-valid-text-model> \
+node --input-type=module -e '
+import { createProvider } from "./src/providers/index.js";
+const p = createProvider();
+const r = await p.selectObservation({
+  observations: [{ id: "obs-1", text: "A door painted to look like open sky.", tags: ["threshold"] }],
+  state: { cycle_count: 0, motifs: {} },
+  constitution: {}
+});
+console.log(JSON.stringify(r, null, 2));'
+```
+
+If it prints JSON containing `observation` and `score`, the live text path
+works. Next, run a full text-only cycle (still no image cost):
+
+```bash
+node src/cli.js run        # ~8 text calls, no image
+```
+
+Only add `--image` once the text path is confirmed:
+
+```bash
+node src/cli.js run --image   # also calls the image model + visual audit
+```
+
+### Status of the live path
+
+The OpenAI adapter is fully implemented — text reasoning (`/responses`), image
+generation (`/images/generations`), and a multimodal visual audit. It has only
+ever been exercised against **mocked** HTTP in the test suite; no live API call
+has been made from this repository. Treat the first live run as unverified and
+start with the single-call probe above.
+
 ## Use a live model and image generator
 
 A ChatGPT subscription does not include API usage. API billing and access are separate.
