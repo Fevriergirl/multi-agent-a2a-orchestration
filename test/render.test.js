@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { encodePng, decodePngStats } from '../src/core/png.js';
 import { renderConceptImage, writeArtifact, auditArtifact } from '../src/render/artifact.js';
+import { createImageBackend } from '../src/render/backends.js';
 import { DeterministicProvider } from '../src/providers/deterministic-provider.js';
 
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -43,6 +44,55 @@ test('writeArtifact produces a real PNG and auditArtifact reads it back', async 
   assert.equal(typeof audit.overall_score, 'number');
   assert.ok(audit.overall_score >= 0 && audit.overall_score <= 1);
   assert.ok(['accept_artifact', 'revise_artifact', 'reject_artifact'].includes(audit.recommended_action));
+});
+
+test('each studio strategy renders as a distinct composition', () => {
+  const prompts = {
+    peripheral: 'Place the impossible fact outside the compositional center.',
+    ritual: 'Make a repetitive domestic action carry the image.',
+    afterimage: 'Show evidence that a figure has left without clarifying whether departure was escape, erasure, or refusal.',
+    contradiction: 'Give one fragile material structural authority and one solid material the behavior of fabric.',
+    hospitality: 'Construct a beautiful invitation into a space whose proportions quietly prevent entry.'
+  };
+  const modes = {};
+  const buffers = [];
+  for (const [name, prompt] of Object.entries(prompts)) {
+    const image = renderConceptImage(prompt, { width: 96, height: 96 });
+    modes[name] = image.mode;
+    buffers.push(image.pixels);
+  }
+  assert.deepEqual(modes, {
+    peripheral: 'peripheral',
+    ritual: 'ritual',
+    afterimage: 'afterimage',
+    contradiction: 'contradiction',
+    hospitality: 'hospitality'
+  });
+  // The five compositions are pixel-distinct from one another.
+  for (let i = 0; i < buffers.length; i += 1) {
+    for (let j = i + 1; j < buffers.length; j += 1) {
+      assert.ok(!buffers[i].equals(buffers[j]), 'distinct compositions render distinct pixels');
+    }
+  }
+});
+
+test('image backend defaults to offline and is selectable by env var', async () => {
+  const offline = createImageBackend({});
+  assert.equal(offline.name, 'offline');
+  const openai = createImageBackend({ HAUNTED_STUDIO_IMAGE: 'openai', OPENAI_API_KEY: 'test' });
+  assert.equal(openai.name, 'openai-image');
+  assert.throws(() => createImageBackend({ HAUNTED_STUDIO_IMAGE: 'openai' }), /OPENAI_API_KEY is required/);
+  assert.throws(() => createImageBackend({ HAUNTED_STUDIO_IMAGE: 'nope' }), /Unknown image backend/);
+});
+
+test('the offline backend generates a real PNG and audits its pixels', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'haunted-backend-'));
+  const outputPath = path.join(dir, 'artifact.png');
+  const backend = createImageBackend({});
+  await backend.generate({ prompt: 'a corridor that keeps a chair facing the wall', outputPath });
+  const audit = await backend.audit({ imagePath: outputPath, candidate: { id: 'cand-b' } });
+  assert.equal(audit.status, 'generated');
+  assert.ok(audit.overall_score > 0);
 });
 
 test('the deterministic provider can generate and audit an artifact offline', async () => {

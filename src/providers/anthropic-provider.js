@@ -1,4 +1,4 @@
-import { writeArtifact, auditArtifact } from '../render/artifact.js';
+import { createImageBackend } from '../render/backends.js';
 
 const JSON_DISCIPLINE = [
   'Return one JSON object and no surrounding prose.',
@@ -108,14 +108,14 @@ export class AnthropicProvider {
   }
 
   // Anthropic has no image-generation API. Rather than skip art entirely, the
-  // provider renders the accepted concept with the studio's offline renderer
-  // (src/render/artifact.js): Claude does the reasoning, the local renderer
-  // makes the picture. No image API key required.
+  // accepted concept is rendered by the configured image backend (offline by
+  // default; a photoreal API via HAUNTED_STUDIO_IMAGE): Claude reasons, the
+  // backend draws. See src/render/backends.js.
   async generateArtifact({ prompt, outputPath }) {
-    return writeArtifact({ prompt, outputPath });
+    return createImageBackend().generate({ prompt, outputPath });
   }
 
   async inspectArtifact({ imagePath, candidate }) {
-    return auditArtifact({ imagePath, candidate });
+    return createImageBackend().audit({ imagePath, candidate });
   }
 }

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { clamp, roundScore, weightedScore } from '../core/scoring.js';
-import { writeArtifact, auditArtifact } from '../render/artifact.js';
+import { createImageBackend } from '../render/backends.js';
 
 function stableNumber(value) {
   const hex = createHash('sha256').update(value).digest('hex').slice(0, 8);
@@ -251,14 +251,15 @@ export class DeterministicProvider {
     };
   }
 
-  // Offline image generation: a real, deterministic PNG rendered from the
-  // candidate's prompt with no external API. See src/render/artifact.js.
+  // Image generation routes through the configured image backend (offline by
+  // default, or a live photoreal API via HAUNTED_STUDIO_IMAGE). See
+  // src/render/backends.js.
   async generateArtifact({ prompt, outputPath }) {
-    return writeArtifact({ prompt, outputPath });
+    return createImageBackend().generate({ prompt, outputPath });
   }
 
   async inspectArtifact({ imagePath, candidate }) {
-    return auditArtifact({ imagePath, candidate });
+    return createImageBackend().audit({ imagePath, candidate });
   }
 
   async consolidateMemory({ observation, selection, critiques, curation, state }) {

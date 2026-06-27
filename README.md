@@ -68,16 +68,37 @@ This runs a full creative cycle and, for the accepted concept, writes a real
 actually produced. A passing audit promotes the work to `verified_artifact`.
 
 The renderer is a deterministic, generative interpretation in the studio's
-visual language — an ordinary tonal field, one understated impossibility (a
-quietly bowing horizon), a pale form, and an area of visual silence. It is not
-a photoreal render; for that, wire a live image model (see
-[Live provider setup](#live-provider-setup)). The same `--image` flag works
-under any provider:
+visual language — an ordinary tonal field, one understated impossibility, a
+pale form, and an area of visual silence. Each of the studio's five strategies
+renders as a **distinct composition** (peripheral evidence, ritual under
+pressure, afterimage, material contradiction, false hospitality), chosen from
+the concept itself. It is not photoreal; for that, flip the image backend
+(below). The same `--image` flag works under any provider:
 
 ```bash
 node src/cli.js run --image                              # deterministic, offline
 HAUNTED_STUDIO_PROVIDER=anthropic ANTHROPIC_API_KEY=... node src/cli.js run --image  # Claude reasons, renderer draws
 ```
+
+### Choosing the image backend
+
+Rendering is chosen independently of the reasoning provider, so any provider
+can draw with the offline renderer or a live photoreal API — flipped by one
+env var:
+
+```bash
+# default: built-in offline renderer, no key
+HAUNTED_STUDIO_IMAGE=offline
+
+# photoreal: OpenAI Images API (needs a paid key + a valid image model)
+export HAUNTED_STUDIO_IMAGE=openai
+export OPENAI_API_KEY=sk-...your-key...
+export OPENAI_IMAGE_MODEL=<a-currently-valid-image-model>
+node src/cli.js run --image          # e.g. with deterministic or Claude reasoning
+```
+
+In both cases the visual audit reads the pixels that were actually produced, so
+a photoreal render is judged on the image, not the prompt.
 
 ## A2A proof of life (start here)
 
