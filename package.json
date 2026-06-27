@@ -19,6 +19,7 @@
     "doctor": "node src/cli.js doctor",
     "demo": "node scripts/demo.js",
     "art": "node src/cli.js run --image",
+    "gallery": "node src/cli.js gallery",
     "proof:a2a": "node scripts/proof-a2a.js",
     "experiment": "node src/cli.js experiment"
   },

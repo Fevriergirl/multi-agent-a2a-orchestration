@@ -100,6 +100,20 @@ node src/cli.js run --image          # e.g. with deterministic or Claude reasoni
 In both cases the visual audit reads the pixels that were actually produced, so
 a photoreal render is judged on the image, not the prompt.
 
+### Browse a run in your browser
+
+Turn a run into a single, self-contained HTML gallery — every cycle's artifact
+(embedded, no server), the curator's decision, canon status, and the visual
+audit:
+
+```bash
+npm run gallery        # writes .haunted-studio/gallery.html
+```
+
+Open the file directly. Accepted cycles show their rendered image and audit
+score bars; refused cycles show as placeholder cards. The page has no external
+dependencies, so it is safe to share or archive on its own.
+
 ## A2A proof of life (start here)
 
 New to the project? Run one command to watch a complete agent-to-agent flow,

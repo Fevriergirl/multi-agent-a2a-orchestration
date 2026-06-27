@@ -8,6 +8,7 @@ import { recordHumanReview } from './engine/human-review.js';
 import { writeTrajectoryReport } from './engine/report.js';
 import { forkStudio } from './engine/fork.js';
 import { runDoctor } from './engine/doctor.js';
+import { buildGallery } from './engine/gallery.js';
 import { JsonlMailbox } from './a2a/mailbox.js';
 import { startMailboxServer } from './a2a/server.js';
 import { EXPERIMENT_CONDITIONS } from './experiment/conditions.js';
@@ -148,6 +149,14 @@ async function main() {
     for (const item of comparison.conditions) {
       console.log(`${item.name}: acceptance=${item.report.cycles.acceptance_rate}, attention_entropy=${item.report.attention.normalized_observation_entropy}`);
     }
+    return;
+  }
+
+  if (parsed.command === 'gallery') {
+    await studio.initialize();
+    const outputPath = path.resolve(parsed.positionals[0] ?? path.join(config.studioRoot, 'gallery.html'));
+    const result = await buildGallery({ studio, outputPath });
+    console.log(`Wrote gallery with ${result.cycleCount} cycle(s) to ${result.outputPath}`);
     return;
   }
 
