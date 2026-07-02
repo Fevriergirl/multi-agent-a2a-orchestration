@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.3.0
+This repository has no release tags. The headings below describe code phases,
+not independently published npm or GitHub releases.
+
+## 0.3.0 - 2026-06-19
+
+First complete Haunted Studio source tree committed to this repository.
 
 - Added six-condition ablation experiment runner.
 - Added self-directed and assigned attention conditions.
@@ -16,7 +21,11 @@
 - Added local-only A2A mailbox hardening and request-size limits.
 - Expanded the test suite.
 
-## 0.2.0
+## Pre-release build phase (historically described as 0.2.0)
 
 - Implemented the first runnable Haunted Studio creative cycle.
 - Added hash-linked ledger, artistic constitution, critics, curator, refusal, memory, and provenance manifests.
+
+No `0.2.0` tag or standalone runnable commit exists in this repository. This
+section records the development narrative retained in the imported 0.3.0
+archive; it should not be interpreted as a verifiable release boundary.

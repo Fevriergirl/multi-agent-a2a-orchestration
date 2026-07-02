@@ -1,9 +1,9 @@
 {
-  "name": "multi-agent-a2a-orchestration",
+  "name": "haunted-studio",
   "version": "0.3.0",
-  "description": "Haunted Studio: an auditable multi-agent experiment in persistent artistic trajectory.",
+  "description": "An auditable multi-agent research system for testing persistent creative trajectories.",
   "type": "module",
-  "private": false,
+  "private": true,
   "engines": {
     "node": ">=20"
   },
